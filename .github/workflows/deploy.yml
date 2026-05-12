@@ -26,7 +26,11 @@ jobs:
         extensions: bcmath, ctype, fileinfo, json, mbstring, openssl, pdo, tokenizer, xml, sqlite3
         coverage: none
         tools: composer:v2
+        ini-values: memory_limit=2G
         
+    - name: Verify PHP version
+      run: php -v
+      
     - name: Copy environment file
       run: cp .env.example .env
       
