@@ -34,36 +34,127 @@ jobs:
           npm install
           npm run build
 
-      - name: FTP Deploy
+      - name: Prepare deployment structure for shared hosting
+        run: |
+          # Shared hosting için Laravel'i yeniden yapılandır
+          mkdir -p deploy/public_html
+          mkdir -p deploy/laravel_app
+
+          # Laravel core dosyalarını laravel_app/ içine kopyala
+          rsync -a --exclude='public' --exclude='node_modules' --exclude='tests' \
+            --exclude='.git' --exclude='.github' --exclude='deploy' \
+            --exclude='backup_original' --exclude='deploy.php' \
+            --exclude='ftp-config.json' --exclude='push-commands.txt' \
+            --exclude='.env' --exclude='phpunit.xml' \
+            --exclude='package.json' --exclude='package-lock.json' \
+            --exclude='vite.config.js' --exclude='README.md' \
+            ./ deploy/laravel_app/
+
+          # public/ içeriğini public_html/ içine kopyala (site root olacak)
+          rsync -a public/ deploy/public_html/
+
+          # index.php'yi shared hosting için düzenle
+          cat > deploy/public_html/index.php << 'EOF'
+          <?php
+
+          use Illuminate\Foundation\Application;
+          use Illuminate\Http\Request;
+
+          define('LARAVEL_START', microtime(true));
+
+          // Maintenance mode kontrolü
+          if (file_exists($maintenance = __DIR__.'/../laravel_app/storage/framework/maintenance.php')) {
+              require $maintenance;
+          }
+
+          // Composer autoloader
+          require __DIR__.'/../laravel_app/vendor/autoload.php';
+
+          // Laravel'i başlat
+          /** @var Application $app */
+          $app = require_once __DIR__.'/../laravel_app/bootstrap/app.php';
+
+          $app->handleRequest(Request::capture());
+          EOF
+
+          # .env dosyasını oluştur (production ayarlarıyla)
+          cat > deploy/laravel_app/.env << 'EOF'
+          APP_NAME=Laravel
+          APP_ENV=production
+          APP_KEY=
+          APP_DEBUG=false
+          APP_URL=https://136.altekbilisim.com
+
+          APP_LOCALE=tr
+          APP_FALLBACK_LOCALE=en
+          APP_FAKER_LOCALE=en_US
+
+          APP_MAINTENANCE_DRIVER=file
+
+          BCRYPT_ROUNDS=12
+
+          LOG_CHANNEL=stack
+          LOG_STACK=single
+          LOG_DEPRECATIONS_CHANNEL=null
+          LOG_LEVEL=error
+
+          DB_CONNECTION=mysql
+          DB_HOST=127.0.0.1
+          DB_PORT=3306
+          DB_DATABASE=alt300iliscomtr_136
+          DB_USERNAME=alt300iliscomtr_kaanorhan
+          DB_PASSWORD=136kaanorhan
+
+          SESSION_DRIVER=file
+          SESSION_LIFETIME=120
+          SESSION_ENCRYPT=false
+          SESSION_PATH=/
+          SESSION_DOMAIN=null
+
+          BROADCAST_CONNECTION=log
+          FILESYSTEM_DISK=local
+          QUEUE_CONNECTION=sync
+
+          CACHE_STORE=file
+
+          MAIL_MAILER=log
+          EOF
+
+          # App key oluştur
+          cd deploy/laravel_app
+          php artisan key:generate --force
+          cd ../..
+
+          # storage ve bootstrap/cache için izinleri ayarla
+          chmod -R 775 deploy/laravel_app/storage
+          chmod -R 775 deploy/laravel_app/bootstrap/cache
+
+          ls -la deploy/
+          ls -la deploy/public_html/
+          ls -la deploy/laravel_app/
+
+      - name: Deploy public_html to server root
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
           server: altekbilisim.com
           username: kaanorhan@136.altekbilisim.com
           password: 136kaanorhan
-          local-dir: ./
-          server-dir: public_html
+          local-dir: ./deploy/public_html/
+          server-dir: public_html/
           timeout: 300000
           protocol: ftp
           security: loose
-          exclude: |
-            **/.env
-            **/.env.example
-            **/.git*
-            **/.git*/**
-            **/.github/**
-            **/.gitignore
-            **/.gitkeep
-            **/README.md
-            **/tests/**
-            **/node_modules/**
-            **/phpunit.xml
-            **/package.json
-            **/package-lock.json
-            **/vite.config.js
-            **/tailwind.config.js
-            **/postcss.config.js
-            **/deployment_guide.md
-            **/migration_log.txt
           log-level: standard
-          dry-run: false
-          dangerous-clean-slate: false
+
+      - name: Deploy laravel_app to server
+        uses: SamKirkland/FTP-Deploy-Action@v4.4.0
+        with:
+          server: altekbilisim.com
+          username: kaanorhan@136.altekbilisim.com
+          password: 136kaanorhan
+          local-dir: ./deploy/laravel_app/
+          server-dir: laravel_app/
+          timeout: 300000
+          protocol: ftp
+          security: loose
+          log-level: standard
