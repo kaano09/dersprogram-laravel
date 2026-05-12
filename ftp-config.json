@@ -1,0 +1,10 @@
+{
+    "host": "your-ftp-server.com",
+    "port": 21,
+    "username": "your-username",
+    "password": "your-password",
+    "remote_path": "/public_html",
+    "passive": true,
+    "ssl": false,
+    "timeout": 30
+}

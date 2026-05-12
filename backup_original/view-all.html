@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tüm Programlar - AhiEvran Program Oluşturucu</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .all-schedules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+        .mini-timetable {
+            width: 100%;
+            table-layout: fixed;
+            word-wrap: break-word;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+        }
+        .mini-timetable th, .mini-timetable td {
+            border: 1px solid var(--glass-border);
+            padding: 4px;
+            text-align: center;
+        }
+        .mini-timetable th {
+            background: rgba(229, 57, 53, 0.05); /* Match default light layout initially */
+            color: var(--primary-color);
+        }
+        body.dark-theme .mini-timetable th {
+            background: rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div style="font-weight: 600; font-size: 1.2rem; display: flex; align-items: center; gap: 10px;">
+            <img src="img/logo.jpg" alt="Logo" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color);">
+            AhiEvran Yönetim Paneli
+        </div>
+        <div class="nav-links">
+            <a href="home.html">Ana Sayfa</a>
+            <a href="teachers.html">Öğretmenler</a>
+            <a href="schedule.html">Program Hazırla</a>
+            <a href="ayarlar.html">Ayarlar</a>
+            <a href="#" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i> Tema</a>
+            <a href="#" onclick="handleLogout(event)" style="color: var(--danger-color);"><i class="fa-solid fa-power-off"></i> Çıkış</a>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 1600px;">
+        <div class="header-actions">
+            <div>
+                <h1>Tüm Sınıfların Programları</h1>
+                <p style="color: #64748b;">Sistemde kayıtlı olan tüm sınıflara ait ders programlarını toplu halde görüntüleyebilirsiniz.</p>
+            </div>
+            <button class="btn btn-primary" onclick="window.print()">
+                <i class="fa-solid fa-print"></i> Yazdır
+            </button>
+        </div>
+
+        <div id="allSchedulesContainer" class="all-schedules-grid">
+            <!-- JS will populate this -->
+        </div>
+    </div>
+
+    <!-- Auth script -->
+    <script src="js/auth.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            renderAllSchedules();
+            applySavedTheme();
+        });
+
+        function renderAllSchedules() {
+            const container = document.getElementById('allSchedulesContainer');
+            container.innerHTML = '';
+            const allData = JSON.parse(localStorage.getItem('allScheduleData')) || {};
+            const clsTeachers = JSON.parse(localStorage.getItem('classTeachers')) || {};
+
+            let hasAnyData = false;
+
+            CLASSES_LIST.forEach(cls => {
+                const cData = allData[cls];
+                // Eğer sınıfa ait hiç ders eklenmemişse pas geç
+                if (!cData || Object.keys(cData).length === 0) return;
+
+                hasAnyData = true;
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'glass-panel';
+                wrapper.style.padding = '1rem';
+                wrapper.style.overflow = 'hidden';
+                wrapper.style.boxSizing = 'border-box';
+
+                const title = document.createElement('h3');
+                title.textContent = cls + " Sınıfı Programı";
+                title.style.marginBottom = '0.2rem';
+                title.style.textAlign = 'center';
+                wrapper.appendChild(title);
+                
+                const cTchr = clsTeachers[cls] || 'Atanmadı';
+                const subTitle = document.createElement('div');
+                subTitle.innerHTML = `<i class="fa-solid fa-user-tie"></i> Sınıf Öğretmeni: <span style="font-weight: 500">${cTchr}</span>`;
+                subTitle.style.marginBottom = '1rem';
+                subTitle.style.textAlign = 'center';
+                subTitle.style.fontSize = '0.85rem';
+                subTitle.style.color = '#94a3b8';
+                wrapper.appendChild(subTitle);
+
+                const table = document.createElement('table');
+                table.className = 'mini-timetable';
+
+                // THEAD
+                const thead = document.createElement('thead');
+                let trHead = '<tr><th style="width: 30px;">Saat</th>';
+                DAYS.forEach(d => trHead += `<th>${d.substring(0,3)}</th>`);
+                trHead += '</tr>';
+                thead.innerHTML = trHead;
+                table.appendChild(thead);
+
+                // TBODY
+                const tbody = document.createElement('tbody');
+                for (let hour = 1; hour <= HOURS; hour++) {
+                    const tr = document.createElement('tr');
+                    const thHour = document.createElement('th');
+                    thHour.textContent = hour;
+                    tr.appendChild(thHour);
+                    
+                    DAYS.forEach(day => {
+                        const cellId = `${hour}-${day}`;
+                        const td = document.createElement('td');
+                        if (cData[cellId]) {
+                            td.innerHTML = `<strong style="filter: brightness(0.85);">${cData[cellId].lessonName}</strong><br><span style="font-size:0.65rem; color: var(--text-color); opacity: 0.85;">${cData[cellId].teacherName}</span>`;
+                        } else {
+                            td.innerHTML = '-';
+                        }
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                }
+                table.appendChild(tbody);
+                wrapper.appendChild(table);
+                container.appendChild(wrapper);
+            });
+
+            if (!hasAnyData) {
+                container.innerHTML = '<p style="color: #64748b;">Kayıtlı herhangi bir ders programı bulunamadı.</p>';
+            }
+        }
+    </script>
+</body>
+</html>

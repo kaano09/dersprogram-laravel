@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ana Sayfa - AhiEvran Program Oluşturucu</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div style="font-weight: 600; font-size: 1.2rem; display: flex; align-items: center; gap: 10px;">
+            <img src="img/logo.jpg" alt="Logo" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-color);">
+            AhiEvran Yönetim Paneli
+        </div>
+        <div class="nav-links">
+            <a href="home.html" style="color: var(--primary-color);">Ana Sayfa</a>
+            <a href="teachers.html">Öğretmenler</a>
+            <a href="schedule.html">Program Hazırla</a>
+            <a href="ayarlar.html">Ayarlar</a>
+            <a href="#" onclick="toggleTheme()"><i class="fa-solid fa-moon"></i> Tema</a>
+            <a href="#" onclick="handleLogout(event)" style="color: var(--danger-color);"><i class="fa-solid fa-power-off"></i> Çıkış</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1>Hoş Geldiniz</h1>
+        <p style="color: #94a3b8; margin-bottom: 2rem;">Meslek lisesi bölümleri ve ortak dersler için program yönetim paneline ulaştınız.</p>
+        
+        <div class="dashboard-grid">
+            <a href="teachers.html" class="glass-panel dashboard-card">
+                <i class="fa-solid fa-chalkboard-user"></i>
+                <h2>Öğretmen Ayarları</h2>
+                <p style="color: #94a3b8; font-size: 0.9rem;">Kurumda çalışan öğretmenleri ekleyin, silin ve yönetin.</p>
+            </a>
+            
+            <a href="schedule.html" class="glass-panel dashboard-card" style="border-color: rgba(59, 130, 246, 0.3);">
+                <i class="fa-solid fa-calendar-days"></i>
+                <h2>Program Hazırla</h2>
+                <p style="color: #64748b; font-size: 0.9rem;">Bilişim, Motor, Elektrik meslek dersleri ve normal lise derslerini kullanarak ders programı oluşturun.</p>
+            </a>
+            
+            <a href="view-all.html" class="glass-panel dashboard-card" style="border-color: rgba(16, 185, 129, 0.3);">
+                <i class="fa-solid fa-eye"></i>
+                <h2>Tüm Programlar</h2>
+                <p style="color: #64748b; font-size: 0.9rem;">Tüm sınıflara ait hazırlanmış olan ders programlarını toplu halde görüntüleyin veya yazdırın.</p>
+            </a>
+        </div>
+    </div>
+
+    <!-- Auth & Logic scripts -->
+    <script src="js/auth.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => { applySavedTheme(); });
+    </script>
+</body>
+</html>
