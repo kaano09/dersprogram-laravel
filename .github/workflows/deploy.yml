@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     
     steps:
     - name: Checkout code
@@ -27,6 +27,8 @@ jobs:
         coverage: none
         tools: composer:v2
         ini-values: memory_limit=2G
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
     - name: Verify PHP version
       run: php -v
