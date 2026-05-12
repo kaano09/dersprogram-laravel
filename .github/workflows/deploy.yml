@@ -36,24 +36,19 @@ jobs:
 
       - name: Prepare deployment structure for shared hosting
         run: |
-          # Shared hosting için Laravel'i yeniden yapılandır
           mkdir -p deploy/public_html
           mkdir -p deploy/laravel_app
 
-          # Laravel core dosyalarını laravel_app/ içine kopyala
           rsync -a --exclude='public' --exclude='node_modules' --exclude='tests' \
             --exclude='.git' --exclude='.github' --exclude='deploy' \
-            --exclude='backup_original' --exclude='deploy.php' \
-            --exclude='ftp-config.json' --exclude='push-commands.txt' \
             --exclude='.env' --exclude='phpunit.xml' \
             --exclude='package.json' --exclude='package-lock.json' \
             --exclude='vite.config.js' --exclude='README.md' \
+            --exclude='.windsurf' \
             ./ deploy/laravel_app/
 
-          # public/ içeriğini public_html/ içine kopyala (site root olacak)
           rsync -a public/ deploy/public_html/
 
-          # index.php'yi shared hosting için düzenle
           cat > deploy/public_html/index.php << 'EOF'
           <?php
 
@@ -62,22 +57,18 @@ jobs:
 
           define('LARAVEL_START', microtime(true));
 
-          // Maintenance mode kontrolü
           if (file_exists($maintenance = __DIR__.'/../laravel_app/storage/framework/maintenance.php')) {
               require $maintenance;
           }
 
-          // Composer autoloader
           require __DIR__.'/../laravel_app/vendor/autoload.php';
 
-          // Laravel'i başlat
           /** @var Application $app */
           $app = require_once __DIR__.'/../laravel_app/bootstrap/app.php';
 
           $app->handleRequest(Request::capture());
           EOF
 
-          # .env dosyasını oluştur (production ayarlarıyla)
           cat > deploy/laravel_app/.env << 'EOF'
           APP_NAME=Laravel
           APP_ENV=production
@@ -120,25 +111,19 @@ jobs:
           MAIL_MAILER=log
           EOF
 
-          # App key oluştur
           cd deploy/laravel_app
           php artisan key:generate --force
           cd ../..
 
-          # storage ve bootstrap/cache için izinleri ayarla
           chmod -R 775 deploy/laravel_app/storage
           chmod -R 775 deploy/laravel_app/bootstrap/cache
 
-          ls -la deploy/
-          ls -la deploy/public_html/
-          ls -la deploy/laravel_app/
-
-      - name: Deploy public_html to server root
+      - name: Deploy public_html
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
-          server: altekbilisim.com
-          username: kaanorhan@136.altekbilisim.com
-          password: 136kaanorhan
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./deploy/public_html/
           server-dir: public_html/
           timeout: 300000
@@ -146,12 +131,12 @@ jobs:
           security: loose
           log-level: standard
 
-      - name: Deploy laravel_app to server
+      - name: Deploy laravel_app
         uses: SamKirkland/FTP-Deploy-Action@v4.4.0
         with:
-          server: altekbilisim.com
-          username: kaanorhan@136.altekbilisim.com
-          password: 136kaanorhan
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./deploy/laravel_app/
           server-dir: laravel_app/
           timeout: 300000
