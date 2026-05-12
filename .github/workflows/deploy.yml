@@ -21,7 +21,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          composer install -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist --no-dev --optimize-autoloader
+          composer update -q --no-ansi --no-interaction --no-scripts --no-progress --prefer-dist --no-dev --optimize-autoloader
           php artisan package:discover --ansi
 
       - name: Setup Node
